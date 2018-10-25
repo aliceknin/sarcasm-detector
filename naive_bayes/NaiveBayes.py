@@ -27,7 +27,7 @@ testing_non_sarcastic_tweets = non_sarcastic_tweets[100000:]
 
 # --- Training ---
 
-# unigrams
+# - Unigrams -
 sarcastic_unigram_counts = {}
 non_sarcastic_unigram_counts = {}
 
@@ -61,7 +61,7 @@ print('total sarcastic unigram count: ' + str(total_sarcastic_unigram_count))
 print('total non sarcastic unigram count: ' + str(total_non_sarcastic_unigram_count))
 
 
-# bigrams
+# - Bigrams -
 sarcastic_bigram_counts = {}
 non_sarcastic_bigram_counts = {}
 
@@ -106,6 +106,41 @@ print('unique bigram count: ' + str(unique_bigram_count))
 print('total sarcastic bigram count: ' + str(total_sarcastic_bigram_count))
 print('total non sarcastic bigram count: ' + str(total_non_sarcastic_bigram_count))
 
+
+# - Repeated Characters -
+sarcastic_repeated_character_count = 0
+non_sarcastic_repeated_character_count = 0
+
+# get repeated character count for sarcastic tweets
+for tweet in training_sarcastic_tweets:
+    characters = ['null_1', 'null_2', 'null_3']
+    repeated_characters = False
+    for character in tweet:
+        characters.pop(0)
+        characters.append(character)
+        if characters[0] == characters[1] and characters[1] == characters[2]:
+            repeated_characters = True
+            break
+    if repeated_characters:
+        sarcastic_repeated_character_count += 1
+
+# get repeated character count for non sarcastic tweets
+for tweet in training_non_sarcastic_tweets:
+    characters = ['null_1', 'null_2', 'null_3']
+    repeated_characters = False
+    for character in tweet:
+        characters.pop(0)
+        characters.append(character)
+        if characters[0] == characters[1] and characters[1] == characters[2]:
+            repeated_characters = True
+            break
+    if repeated_characters:
+        non_sarcastic_repeated_character_count += 1
+
+
+print('')
+print('sarcastic repeated character count: ' + str(sarcastic_repeated_character_count))
+print('non sarcastic repeated character count: ' + str(non_sarcastic_repeated_character_count))
 
 
 # --- Testing ---
@@ -156,6 +191,20 @@ for tweet in testing_tweets:
         ns_count = (non_sarcastic_bigram_counts.get(bigram) or 0) + 1
         ns_prob = ns_count / (total_non_sarcastic_bigram_count + unique_bigram_count)
         non_sarcastic_prob *= ns_prob
+
+    repeated_characters = False
+    for character in tweet:
+        characters.pop(0)
+        characters.append(character)
+        if characters[0] == characters[1] and characters[1] == characters[2]:
+            repeated_characters = True
+            break
+    if repeated_characters:
+        sarcastic_prob *= (sarcastic_repeated_character_count / 20000)
+        non_sarcastic_prob *= (non_sarcastic_repeated_character_count / 100000)
+    else:
+        sarcastic_prob *= ((20000 - sarcastic_repeated_character_count) / 20000)
+        non_sarcastic_prob *= ((100000 - non_sarcastic_repeated_character_count) / 100000)
 
     result = 's'
     if non_sarcastic_prob > sarcastic_prob:
