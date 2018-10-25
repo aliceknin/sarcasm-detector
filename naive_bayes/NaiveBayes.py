@@ -18,14 +18,12 @@ for tweet in negproc:
 print('num sarcastic tweets: ' + str(len(sarcastic_tweets)))
 print('num non sarcastic tweets: ' + str(len(non_sarcastic_tweets)))
 
-
 # Separate training and testing data
 training_sarcastic_tweets = sarcastic_tweets[0:20000]
 testing_sarcastic_tweets = sarcastic_tweets[20000:]
 
 training_non_sarcastic_tweets = non_sarcastic_tweets[0:100000]
 testing_non_sarcastic_tweets = non_sarcastic_tweets[100000:]
-
 
 # --- Training ---
 
@@ -109,6 +107,7 @@ print('total sarcastic bigram count: ' + str(total_sarcastic_bigram_count))
 print('total non sarcastic bigram count: ' + str(total_non_sarcastic_bigram_count))
 
 
+
 # --- Testing ---
 
 # combine sarcastic and non-sarcastic tweets into one testing set
@@ -173,8 +172,6 @@ for tweet in testing_tweets:
         else:
             results['tn'] = results.get('tn') + 1
 
-
-
 precision = results.get('tp') / (results.get('tp') + results.get('fp'))
 recall = results.get('tp') / (results.get('tp') + results.get('fn'))
 f_score = (2 * precision * recall) / (precision + recall)
@@ -184,12 +181,4 @@ print('')
 print('precision: ' + str(precision))
 print('recall: ' + str(recall))
 print('f-score: ' + str(f_score))
-
-
-
-
-
-
-
-
 
