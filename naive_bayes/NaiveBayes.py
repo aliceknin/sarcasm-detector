@@ -18,14 +18,12 @@ for tweet in negproc:
 print('num sarcastic tweets: ' + str(len(sarcastic_tweets)))
 print('num non sarcastic tweets: ' + str(len(non_sarcastic_tweets)))
 
-
 # Separate training and testing data
 training_sarcastic_tweets = sarcastic_tweets[0:20000]
 testing_sarcastic_tweets = sarcastic_tweets[20000:]
 
 training_non_sarcastic_tweets = non_sarcastic_tweets[0:100000]
 testing_non_sarcastic_tweets = non_sarcastic_tweets[100000:]
-
 
 # --- Training ---
 
@@ -59,7 +57,6 @@ for tweet in training_non_sarcastic_tweets:
 print('unique unigram count: ' + str(unique_unigram_count))
 print('total sarcastic unigram count: ' + str(total_sarcastic_unigram_count))
 print('total non sarcastic unigram count: ' + str(total_non_sarcastic_unigram_count))
-
 
 # --- Testing ---
 
@@ -106,21 +103,8 @@ for tweet in testing_tweets:
         else:
             results['tn'] = results.get('tn') + 1
 
-
-
 precision = results.get('tp') / (results.get('tp') + results.get('fp'))
 recall = results.get('tp') / (results.get('tp') + results.get('fn'))
 
-
-
 print('precision: ' + str(precision))
 print('recall: ' + str(recall))
-
-
-
-
-
-
-
-
-
