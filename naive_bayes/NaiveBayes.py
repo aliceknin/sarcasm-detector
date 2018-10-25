@@ -2,7 +2,7 @@ import numpy
 import nltk
 from nltk.corpus import sentiwordnet
 
-
+# load data
 posproc = numpy.load('posproc.npy')
 negproc = numpy.load('negproc.npy')
 
@@ -15,15 +15,109 @@ for tweet in posproc:
 for tweet in negproc:
     non_sarcastic_tweets.append(tweet.decode('utf-8'))
 
-print(sarcastic_tweets[1])
-print(non_sarcastic_tweets[0])
-
-unigrams = {}
-
-# for tweet in sarcastic_tweets
+print('num sarcastic tweets: ' + str(len(sarcastic_tweets)))
+print('num non sarcastic tweets: ' + str(len(non_sarcastic_tweets)))
 
 
-# print(sentiwordnet.senti_synset('breakdown.n.03').pos_score())
+# Separate training and testing data
+training_sarcastic_tweets = sarcastic_tweets[0:20000]
+testing_sarcastic_tweets = sarcastic_tweets[20000:]
+
+training_non_sarcastic_tweets = non_sarcastic_tweets[0:100000]
+testing_non_sarcastic_tweets = non_sarcastic_tweets[100000:]
+
+
+# --- Training ---
+
+sarcastic_unigram_counts = {}
+non_sarcastic_unigram_counts = {}
+
+total_sarcastic_unigram_count = 0
+total_non_sarcastic_unigram_count = 0
+unique_unigram_count = 0
+
+# get unigram counts for sarcastic tweets
+for tweet in training_sarcastic_tweets:
+    tokenized_tweet = nltk.word_tokenize(tweet)
+    for token in tokenized_tweet:
+        count = sarcastic_unigram_counts.get(token) or 0
+        if count == 0 and non_sarcastic_unigram_counts.get(token) is None:
+            unique_unigram_count += 1
+        sarcastic_unigram_counts[token] = count + 1
+        total_sarcastic_unigram_count += 1
+
+# get unigram counts for non sarcastic tweets
+for tweet in training_non_sarcastic_tweets:
+    tokenized_tweet = nltk.word_tokenize(tweet)
+    for token in tokenized_tweet:
+        count = non_sarcastic_unigram_counts.get(token) or 0
+        if count == 0 and sarcastic_unigram_counts.get(token) is None:
+            unique_unigram_count += 1
+        non_sarcastic_unigram_counts[token] = count + 1
+        total_non_sarcastic_unigram_count += 1
+
+print('unique unigram count: ' + str(unique_unigram_count))
+print('total sarcastic unigram count: ' + str(total_sarcastic_unigram_count))
+print('total non sarcastic unigram count: ' + str(total_non_sarcastic_unigram_count))
+
+
+# --- Testing ---
+
+# combine sarcastic and non-sarcastic tweets into one testing set
+testing_tweets = testing_sarcastic_tweets
+testing_tweets.extend(testing_non_sarcastic_tweets)
+
+# results matrix (true positive, false positive, false negative, true negative)
+results = {
+    'tp': 0, 'fp': 0,
+    'fn': 0, 'tn': 0
+}
+
+# determine result of each tweet in testing set
+for tweet in testing_tweets:
+    tokenized_tweet = nltk.word_tokenize(tweet)
+
+    sarcastic_prob = 1
+    non_sarcastic_prob = 1
+
+    for word in tokenized_tweet:
+        # probability this unigram is sarcastic
+        s_count = (sarcastic_unigram_counts.get(word) or 0) + 1
+        s_prob = s_count / (total_sarcastic_unigram_count + unique_unigram_count)
+        sarcastic_prob *= s_prob
+
+        # probability this unigram is non sarcatic
+        ns_count = (non_sarcastic_unigram_counts.get(word) or 0) + 1
+        ns_prob = ns_count / (total_non_sarcastic_unigram_count + unique_unigram_count)
+        non_sarcastic_prob *= ns_prob
+
+    result = 's'
+    if non_sarcastic_prob > sarcastic_prob:
+        result = 'ns'
+
+    if result == 's':
+        if tweet in sarcastic_tweets:
+            results['tp'] = results.get('tp') + 1
+        else:
+            results['fp'] = results.get('fp') + 1
+    else:
+        if tweet in sarcastic_tweets:
+            results['fn'] = results.get('fn') + 1
+        else:
+            results['tn'] = results.get('tn') + 1
+
+
+
+precision = results.get('tp') / (results.get('tp') + results.get('fp'))
+recall = results.get('tp') / (results.get('tp') + results.get('fn'))
+
+
+
+print('precision: ' + str(precision))
+print('recall: ' + str(recall))
+
+
+
 
 
 
