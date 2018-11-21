@@ -211,8 +211,35 @@ for tweet in training_non_sarcastic_tweets:
     non_sarcastic_sentiments[score] = count
 
 
+# - Capitalization -
+
+sarcastic_caps = {}
+non_sarcastic_caps = {}
+
+def get_percent_caps(tweet):
+    num_caps = 0
+    for letter in tweet:
+        if letter.isupper():
+            num_caps += 1
+    percent_caps = num_caps / len(tweet)
+    adjusted_percent_caps = math.ceil(percent_caps * 100)
+    return adjusted_percent_caps
 
 
+for tweet in training_sarcastic_tweets:
+    percent = get_percent_caps(tweet)
+
+    count = sarcastic_caps.get(percent) or 0
+    count += 1
+    sarcastic_caps[percent] = count
+
+
+for tweet in training_non_sarcastic_tweets:
+    percent = get_percent_caps(tweet)
+
+    count = non_sarcastic_caps.get(percent) or 0
+    count += 1
+    non_sarcastic_caps[percent] = count
 
 
 
@@ -289,6 +316,15 @@ for tweet in testing_tweets:
     sarcastic_prob *= (sarcastic_senti_count / 20000)
     non_sarcastic_prob *= (non_sarcastic_senti_count / 100000)
 
+    # capitalization testing
+    percent = get_percent_caps(tweet)
+    sarcastic_caps_count = (sarcastic_caps.get(percent) or 0) + 1
+    non_sarcastic_caps_count = (non_sarcastic_caps.get(percent) or 0) + 1
+
+    sarcastic_prob *= (sarcastic_caps_count / 20000)
+    non_sarcastic_prob *= (non_sarcastic_caps_count / 100000)
+
+
     # results
     result = 's'
     if non_sarcastic_prob > sarcastic_prob:
@@ -304,6 +340,7 @@ for tweet in testing_tweets:
             results['fn'] = results.get('fn') + 1
         else:
             results['tn'] = results.get('tn') + 1
+
 
 precision = results.get('tp') / (results.get('tp') + results.get('fp'))
 recall = results.get('tp') / (results.get('tp') + results.get('fn'))
