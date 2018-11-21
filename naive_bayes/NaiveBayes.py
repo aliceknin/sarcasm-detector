@@ -1,5 +1,6 @@
 import numpy
 import nltk
+import math
 from nltk.corpus import sentiwordnet
 
 # load data
@@ -143,6 +144,78 @@ print('sarcastic repeated character count: ' + str(sarcastic_repeated_character_
 print('non sarcastic repeated character count: ' + str(non_sarcastic_repeated_character_count))
 
 
+# - Sentiment -
+
+sarcastic_sentiments = {}
+non_sarcastic_sentiments = {}
+
+def convert_tag(tag):
+    if tag.startswith('NN'):
+        return 'n'
+    elif tag.startswith('VB'):
+        return 'v'
+    elif tag.startswith('JJ'):
+        return 'a'
+    elif tag.startswith('RB'):
+        return 'r'
+    else:
+        return ''
+
+
+def get_senti_score(sentence):
+    token = nltk.word_tokenize(sentence)
+    tagged = nltk.pos_tag(token)
+
+    avg_senti_score = 0
+    num_senti_words = 0
+
+    for pair in tagged:
+        word = pair[0]
+        tag = convert_tag(pair[1])
+        if tag != '':
+            senti_word_1 = word + '.' + tag + '.01'
+            senti_word_2 = word + '.' + tag + '.02'
+            senti_word_3 = word + '.' + tag + '.03'
+            try:
+                senti_score_1 = sentiwordnet.senti_synset(senti_word_1)
+                senti_score_2 = sentiwordnet.senti_synset(senti_word_2)
+                senti_score_3 = sentiwordnet.senti_synset(senti_word_3)
+                senti_score_pos = (senti_score_1.pos_score() + senti_score_2.pos_score() + senti_score_3.pos_score()) / 3
+                senti_score_neg = (senti_score_1.neg_score() + senti_score_2.neg_score() + senti_score_3.neg_score()) / 3
+                avg_senti_score += (senti_score_pos - senti_score_neg)
+                num_senti_words += 1
+            except:
+                avg_senti_score += 0
+
+    if num_senti_words > 0:
+        avg_senti_score /= num_senti_words
+
+    if avg_senti_score >= 0:
+        adjusted_score = math.ceil(avg_senti_score * 100)
+    else:
+        adjusted_score = math.floor(avg_senti_score * 100)
+
+    return adjusted_score
+
+
+for tweet in training_sarcastic_tweets:
+    score = get_senti_score(tweet)
+    count = sarcastic_sentiments.get(score) or 0
+    count += 1
+    sarcastic_sentiments[score] = count
+
+for tweet in training_non_sarcastic_tweets:
+    score = get_senti_score(tweet)
+    count = non_sarcastic_sentiments.get(score) or 0
+    count += 1
+    non_sarcastic_sentiments[score] = count
+
+
+
+
+
+
+
 # --- Testing ---
 
 # combine sarcastic and non-sarcastic tweets into one testing set
@@ -192,6 +265,8 @@ for tweet in testing_tweets:
         ns_prob = ns_count / (total_non_sarcastic_bigram_count + unique_bigram_count)
         non_sarcastic_prob *= ns_prob
 
+    # repeated character testing
+    characters = ['null_1', 'null_2', 'null_3']
     repeated_characters = False
     for character in tweet:
         characters.pop(0)
@@ -206,6 +281,15 @@ for tweet in testing_tweets:
         sarcastic_prob *= ((20000 - sarcastic_repeated_character_count) / 20000)
         non_sarcastic_prob *= ((100000 - non_sarcastic_repeated_character_count) / 100000)
 
+    # sentiment testing
+    senti_score = get_senti_score(tweet)
+    sarcastic_senti_count = (sarcastic_sentiments.get(senti_score) or 0) + 1
+    non_sarcastic_senti_count = (non_sarcastic_sentiments.get(senti_score) or 0) + 1
+
+    sarcastic_prob *= (sarcastic_senti_count / 20000)
+    non_sarcastic_prob *= (non_sarcastic_senti_count / 100000)
+
+    # results
     result = 's'
     if non_sarcastic_prob > sarcastic_prob:
         result = 'ns'
