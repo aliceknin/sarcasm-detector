@@ -6,10 +6,12 @@ from sklearn.metrics import mean_squared_error
 from scipy.stats import pearsonr
 
 def train_and_validate_svm(train_data, train_labels, test_data, test_labels, \
-                           kernel='rbf', C=1.0, gamma='scale', verbose=False):
-    svm = SVC(kernel=kernel, C=C, gamma='scale', verbose=verbose)
+                           kernel='rbf', C=1.0, gamma='scale', verbose=False, class_weight='balanced'):
+    svm = SVC(kernel=kernel, C=C, gamma='scale', verbose=verbose, class_weight=class_weight)
     svm.fit(train_data, train_labels)
     predicted_labels = svm.predict(test_data)
+    print('test', test_labels[:10], test_labels[-10:])
+    print('pred', predicted_labels[:10], predicted_labels[-10:])
     mse = mean_squared_error(test_labels, predicted_labels)
     print('mean squared error:', mse)
     pearson = pearsonr(test_labels, predicted_labels)
@@ -19,7 +21,7 @@ def train_and_validate_svm(train_data, train_labels, test_data, test_labels, \
     return mse, pearson, f_score
 
 def cross_validate_svm(data, labels, \
-                       kernel='linear', C=1.0, verbose=False):
+                       kernel='linear', C=1.0, gamma='scale', verbose=False, class_weight='balanced'):
     print('cross-validating svm...')
     num_cross_validation_trials = 10
     kfold = KFold(num_cross_validation_trials, True, 1)
@@ -32,7 +34,7 @@ def cross_validate_svm(data, labels, \
 
         mse, (pearson_r, pearson_p), f_score = \
          train_and_validate_svm(data[train], labels[train], data[val], labels[val], \
-                                kernel, C, verbose)
+                                kernel, C, gamma, verbose, class_weight)
         mses.append(mse)
         pearsons.append(pearson_r)
         f_scores.append(f_score)

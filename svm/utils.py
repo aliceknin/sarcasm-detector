@@ -5,6 +5,7 @@ import numpy as np
 from nltk.corpus import stopwords
 from nltk.corpus import sentiwordnet
 import svm
+import max_ent
 from sklearn import preprocessing
 
 from datetime import datetime
@@ -319,10 +320,10 @@ if __name__ == '__main__':
     assert(len(test_tweets) == len(test_labels))
 
     # abbreviate the tweets for testing ...
-    _train_tweets = train_tweets[:2000] + train_tweets[-2000:]
-    _train_labels = train_labels[:2000] + train_labels[-2000:]
-    _test_tweets = test_tweets[:2000] + test_tweets[-2000:]
-    _test_labels = test_labels[:2000] + test_labels[-2000:]
+    _train_tweets = train_tweets[:1000] + train_tweets[-4000:]
+    _train_labels = train_labels[:1000] + train_labels[-4000:]
+    _test_tweets = test_tweets[:1000] + test_tweets[-4000:]
+    _test_labels = test_labels[:1000] + test_labels[-4000:]
 
     np_train_features = \
         assemble_scalar_features(_train_tweets)
@@ -339,6 +340,13 @@ if __name__ == '__main__':
 
     print(scaled_train_features[:10])
 
-    svm.cross_validate_svm(scaled_train_features, np_train_labels, kernel="rbf")
+    svm.cross_validate_svm(scaled_train_features, np_train_labels)
+
+    svm.train_and_validate_svm(scaled_train_features, np_train_labels, scaled_test_features, np_test_labels)
+
+    max_ent.cross_validate_lr(scaled_train_features, np_train_labels)
+
+    max_ent.train_and_validate_lr(scaled_train_features, np_train_labels, scaled_test_features, np_test_labels)
+
     nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
     print("====" + nowStr + "====")
