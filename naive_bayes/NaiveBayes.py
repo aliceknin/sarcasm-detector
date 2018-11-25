@@ -4,8 +4,8 @@ import math
 from nltk.corpus import sentiwordnet
 
 # load data
-posproc = numpy.load('posproc.npy')
-negproc = numpy.load('negproc.npy')
+posproc = numpy.load('../data/posproc.npy')
+negproc = numpy.load('../data/negproc.npy')
 
 sarcastic_tweets = []
 non_sarcastic_tweets = []
@@ -351,4 +351,3 @@ print('')
 print('precision: ' + str(precision))
 print('recall: ' + str(recall))
 print('f-score: ' + str(f_score))
-
