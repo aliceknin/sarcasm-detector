@@ -340,9 +340,17 @@ if __name__ == '__main__':
 
     print(scaled_train_features[:10])
 
+    print()
+    print(' SVM '.center(80, "~"))
+    print()
+
     svm.cross_validate_svm(scaled_train_features, np_train_labels)
 
     svm.train_and_validate_svm(scaled_train_features, np_train_labels, scaled_test_features, np_test_labels)
+
+    print()
+    print(' MaxEnt '.center(80, "~"))
+    print()
 
     max_ent.cross_validate_lr(scaled_train_features, np_train_labels)
 

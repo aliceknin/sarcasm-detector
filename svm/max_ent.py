@@ -25,7 +25,7 @@ def train_and_validate_lr(train_data, train_labels, test_data, test_labels, \
 
 def cross_validate_lr(data, labels, \
                        penalty='l2', solver='sag', verbose=0, class_weight='balanced'):
-    print('cross-validating svm...')
+    print('cross-validating max-ent...')
     num_cross_validation_trials = 10
     kfold = KFold(num_cross_validation_trials, True, 1)
 
