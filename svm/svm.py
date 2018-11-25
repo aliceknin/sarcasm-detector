@@ -6,8 +6,8 @@ from sklearn.metrics import mean_squared_error
 from scipy.stats import pearsonr
 
 def train_and_validate_svm(train_data, train_labels, test_data, test_labels, \
-                           kernel='linear', C=1.0, verbose=False):
-    svm = SVC(kernel=kernel, C=C, verbose=verbose)
+                           kernel='rbf', C=1.0, gamma='scale', verbose=False):
+    svm = SVC(kernel=kernel, C=C, gamma='scale', verbose=verbose)
     svm.fit(train_data, train_labels)
     predicted_labels = svm.predict(test_data)
     mse = mean_squared_error(test_labels, predicted_labels)
@@ -56,24 +56,3 @@ def print_metric_results_of_trials(metrics_over_trials, metric_name):
     print("%s mean: %7.4f" % (metric_name, avg_metric))
     print("%s max:  %7.4f" % (metric_name, max_metric))
     print(80*'=')
-
-# ------------------------------------------------------------------------
-# Tests ---
-# ------------------------------------------------------------------------
-
-# if __name__ == '__main__':
-#
-#     embeddings = utils.load_word2vec_embeddings()
-#
-#     summaries, nr, fluencies = utils.get_summaries_and_scores()
-#     summary_words = utils.get_summary_words(summaries)
-#
-#     non_redundancy_features = utils.non_redundancy_input(summary_words, embeddings)
-#     print("non redundancy features:", non_redundancy_features[:5])
-#
-#     kernel = 'linear'
-#     C = 1.0
-#     verbose = True
-#
-#     mses, pearsons = \
-#         svm.cross_validate_svm(non_redundancy_features, nr, 10, kernel, C, verbose)

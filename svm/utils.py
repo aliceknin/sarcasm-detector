@@ -3,7 +3,9 @@ import nltk
 import math
 import numpy as np
 from nltk.corpus import stopwords
+from nltk.corpus import sentiwordnet
 import svm
+from sklearn import preprocessing
 
 from datetime import datetime
 
@@ -250,6 +252,8 @@ def get_sentiments_tweets(tweets):
         if i+1 % 1000 == 0:
             print()
     print()
+    fdist = nltk.FreqDist(scores)
+    print('most common 50 sentiments:', fdist.most_common(50))
     return scores
 
 ############################## Assemble Features ##############################
@@ -327,11 +331,14 @@ if __name__ == '__main__':
     np_train_labels = np.array(_train_labels)
     np_test_labels = np.array(_test_labels)
 
-    print(np_train_features[:2])
-
     nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
     print("====" + nowStr + "====")
 
-    svm.cross_validate_svm(np_train_features, np_train_labels, kernel="rbf", verbose=True)
+    scaled_train_features = preprocessing.scale(np_train_features)
+    scaled_test_features = preprocessing.scale(np_test_features)
+
+    print(scaled_train_features[:10])
+
+    svm.cross_validate_svm(scaled_train_features, np_train_labels, kernel="rbf")
     nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
     print("====" + nowStr + "====")
