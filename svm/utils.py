@@ -18,6 +18,8 @@ COUNT_NON_SARCASTIC_TRAINING_TWEETS = 100000
 SARCASTIC = 1
 NON_SARCASTIC = 0
 
+NUM_MOST_COMMON_NGRAMS = 50
+
 # removes blank lines, replaces \n with space, removes duplicate spaces
 def process_whitespace(token_str):
     no_new_line = re.sub(r'\n', " ", token_str)
@@ -44,19 +46,70 @@ def load_data():
 
 # Separate training and testing data
 def get_data(sarcastic_tweets, non_sarcastic_tweets):
-    training_sarcastic_tweets = sarcastic_tweets[0:COUNT_SARCASTIC_TRAINING_TWEETS]
-    testing_sarcastic_tweets = sarcastic_tweets[COUNT_SARCASTIC_TRAINING_TWEETS:]
+    labeled_training_sarcastic_tweets = sarcastic_tweets[0:COUNT_SARCASTIC_TRAINING_TWEETS]
+    labeled_testing_sarcastic_tweets = sarcastic_tweets[COUNT_SARCASTIC_TRAINING_TWEETS:]
 
-    training_non_sarcastic_tweets = non_sarcastic_tweets[0:COUNT_NON_SARCASTIC_TRAINING_TWEETS]
-    testing_non_sarcastic_tweets = non_sarcastic_tweets[COUNT_NON_SARCASTIC_TRAINING_TWEETS:]
+    labeled_training_non_sarcastic_tweets = non_sarcastic_tweets[0:COUNT_NON_SARCASTIC_TRAINING_TWEETS]
+    labeled_testing_non_sarcastic_tweets = non_sarcastic_tweets[COUNT_NON_SARCASTIC_TRAINING_TWEETS:]
 
-    labeled_train_tweets = training_sarcastic_tweets + training_non_sarcastic_tweets
-    labeled_test_tweets = testing_sarcastic_tweets + testing_non_sarcastic_tweets
+    training_sarcastic_tweets, training_sarcastic_tweets_labels = zip(*labeled_training_sarcastic_tweets)
+    training_non_sarcastic_tweets, training_non_sarcastic_tweets_labels = zip(*labeled_training_non_sarcastic_tweets)
+    testing_sarcastic_tweets, testing_sarcastic_tweets_labels = zip(*labeled_testing_sarcastic_tweets)
+    testing_non_sarcastic_tweets, testing_non_sarcastic_tweets_labels = zip(*labeled_testing_non_sarcastic_tweets)
 
-    train_tweets, train_labels = zip(*labeled_train_tweets)
-    test_tweets, test_labels = zip(*labeled_test_tweets)
+    train_tweets = training_sarcastic_tweets + training_non_sarcastic_tweets
+    train_labels = training_sarcastic_tweets_labels + training_non_sarcastic_tweets_labels
+    test_tweets = testing_sarcastic_tweets + testing_non_sarcastic_tweets
+    test_labels = testing_sarcastic_tweets_labels + testing_non_sarcastic_tweets_labels
 
-    return train_tweets, train_labels, test_tweets, test_labels
+    sarc_freq_set, non_sarc_freq_set = get_sets(training_sarcastic_tweets, training_non_sarcastic_tweets)
+
+    return train_tweets, train_labels, test_tweets, test_labels, sarc_freq_set, non_sarc_freq_set
+
+def get_sets(training_sarcastic_tweets, training_non_sarcastic_tweets):
+    print('creating most common sarcastic and non-sarcastic ngram sets...')
+    sarc_unigrams, sarc_bigrams = \
+        get_unigrams_and_bigrams(training_sarcastic_tweets)
+    non_sarc_unigrams, non_sarc_bigrams = \
+        get_unigrams_and_bigrams(training_non_sarcastic_tweets)
+    sarc_freq_unigrams, non_sarc_freq_unigrams = \
+        get_freq_ngrams_sets(sarc_unigrams, non_sarc_unigrams)
+    sarc_freq_bigrams, non_sarc_freq_bigrams = \
+        get_freq_ngrams_sets(sarc_bigrams, non_sarc_bigrams)
+    sarc_freq_set = sarc_freq_unigrams.union(sarc_freq_bigrams)
+    non_sarc_freq_set = non_sarc_freq_unigrams.union(non_sarc_freq_bigrams)
+    return sarc_freq_set, non_sarc_freq_set
+
+def get_unigrams_and_bigrams(tweets):
+    words_in_tweets = get_tweet_words(tweets)
+    bigrams_in_tweets = find_ngrams_in_tweets(2, words_in_tweets)
+    return words_in_tweets, bigrams_in_tweets
+
+def get_freq_ngrams_sets(sarc_ngrams, non_sarc_ngrams):
+    fd_only_sarc, fd_only_non_sarc = \
+        remove_common_ngrams(sarc_ngrams, non_sarc_ngrams)
+
+    sarc_freq_set = get_freq_ngrams_set(fd_only_sarc)
+    non_sarc_freq_set = get_freq_ngrams_set(fd_only_non_sarc)
+
+    return sarc_freq_set, non_sarc_freq_set
+
+def get_freq_ngrams_set(fd_ngrams):
+    most_common_ngrams = fd_ngrams.most_common(NUM_MOST_COMMON_NGRAMS)
+    freq_ngrams, freq_counts = zip(*most_common_ngrams)
+    return set(freq_ngrams)
+
+def remove_common_ngrams(sarc_ngrams, non_sarc_ngrams):
+    fd_sarc = get_ngram_freqs(sarc_ngrams)
+    fd_non_sarc = get_ngram_freqs(non_sarc_ngrams)
+    fd_only_sarc = fd_sarc - fd_non_sarc
+    fd_only_non_sarc = fd_non_sarc - fd_sarc
+    return fd_only_sarc, fd_only_non_sarc
+
+def get_ngram_freqs(ngrams_in_tweets):
+    ngrams = [ ngram for tweet in ngrams_in_tweets for ngram in tweet]
+    fd_ngrams = nltk.FreqDist(ngrams)
+    return fd_ngrams
 
 ################################### N-Grams ####################################
 
@@ -146,6 +199,26 @@ def get_training_vocabulary(words_in_tweets, bigrams_in_tweets):
     bigrams = [ bigram for tweet in bigrams_in_tweets for bigram in tweet ]
     bigram_dict = create_vocab_dict(bigrams)
     return word_dict, bigram_dict
+
+def common_ngrams_count(ngrams_in_tweets, freq_set):
+    freq_counts = []
+    for tokens in ngrams_in_tweets:
+        freq_count = 0
+        for token in tokens:
+            if token in freq_set:
+                freq_count += 1
+        freq_counts.append(freq_count)
+    return freq_counts
+
+
+def get_freq_ngram_counts(words_in_tweets, bigrams_in_tweets, sarc_freq_set, non_sarc_freq_set):
+    print('getting freq sarcastic and non-sarcatistic ngram counts...')
+    sarc_unigrams_count = common_ngrams_count(words_in_tweets, sarc_freq_set)
+    sarc_bigrams_count = common_ngrams_count(bigrams_in_tweets, sarc_freq_set)
+    non_sarc_unigrams_count = common_ngrams_count(words_in_tweets, non_sarc_freq_set)
+    non_sarc_bigrams_count = common_ngrams_count(bigrams_in_tweets, non_sarc_freq_set)
+
+    return sarc_unigrams_count, sarc_bigrams_count, non_sarc_unigrams_count, non_sarc_bigrams_count
 
 ############# Repeated Characters and Capitalized Words Features ###############
 
@@ -277,12 +350,18 @@ def assemble_features(tweets, words_in_tweets, bigrams_in_tweets, word_dict, big
 
     return np.array(features)
 
-def assemble_scalar_features(tweets):
+def assemble_scalar_features(tweets, sarc_freq_set, non_sarc_freq_set):
+    words_in_tweets, bigrams_in_tweets = get_unigrams_and_bigrams(tweets)
+    sarc_unigrams_count, sarc_bigrams_count, \
+    non_sarc_unigrams_count, non_sarc_bigrams_count = \
+        get_freq_ngram_counts(words_in_tweets, bigrams_in_tweets, sarc_freq_set, non_sarc_freq_set)
     repeated_character_counts = get_repeated_character_count_tweets(tweets)
     percent_caps = get_percent_caps_tweets(tweets)
     sentiment_scores = get_sentiments_tweets(tweets)
 
-    features = list(zip(repeated_character_counts, percent_caps, sentiment_scores))
+    features = list(zip(sarc_unigrams_count, sarc_bigrams_count, \
+                        non_sarc_unigrams_count, non_sarc_bigrams_count, \
+                        repeated_character_counts, percent_caps, sentiment_scores))
     return np.array(features)
 
 # Assemble the features for training tweets
@@ -310,8 +389,8 @@ if __name__ == '__main__':
     nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
     print("====" + nowStr + "====")
 
-    sarcastic_tweets, non_sarcastic_tweets = load_data()
-    train_tweets, train_labels, test_tweets, test_labels = \
+    sarcastic_tweets, non_sarcastic_tweets = load_data() #
+    train_tweets, train_labels, test_tweets, test_labels, sarc_freq_set, non_sarc_freq_set = \
         get_data(sarcastic_tweets, non_sarcastic_tweets)
 
     assert(len(train_tweets) + len(test_tweets) == \
@@ -320,17 +399,19 @@ if __name__ == '__main__':
     assert(len(test_tweets) == len(test_labels))
 
     # abbreviate the tweets for testing ...
-    _train_tweets = train_tweets[:1000] + train_tweets[-4000:]
-    _train_labels = train_labels[:1000] + train_labels[-4000:]
-    _test_tweets = test_tweets[:1000] + test_tweets[-4000:]
-    _test_labels = test_labels[:1000] + test_labels[-4000:]
+    _train_tweets = train_tweets[:2000] + train_tweets[-2000:]
+    _train_labels = train_labels[:2000] + train_labels[-2000:]
+    _test_tweets = test_tweets[:2000] + test_tweets[-2000:]
+    _test_labels = test_labels[:2000] + test_labels[-2000:]
 
     np_train_features = \
-        assemble_scalar_features(_train_tweets)
+        assemble_scalar_features(_train_tweets, sarc_freq_set, non_sarc_freq_set)
     np_test_features = \
-        assemble_scalar_features(_test_tweets)
+        assemble_scalar_features(_test_tweets, sarc_freq_set, non_sarc_freq_set)
     np_train_labels = np.array(_train_labels)
     np_test_labels = np.array(_test_labels)
+
+    print(np_train_features[:10])
 
     nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
     print("====" + nowStr + "====")
