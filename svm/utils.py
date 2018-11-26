@@ -18,7 +18,7 @@ COUNT_NON_SARCASTIC_TRAINING_TWEETS = 100000
 SARCASTIC = 1
 NON_SARCASTIC = 0
 
-NUM_MOST_COMMON_NGRAMS = 50
+NUM_MOST_COMMON_NGRAMS = 1000000
 
 # removes blank lines, replaces \n with space, removes duplicate spaces
 def process_whitespace(token_str):
