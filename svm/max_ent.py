@@ -9,8 +9,11 @@ from sklearn.metrics import mean_squared_error
 from scipy.stats import pearsonr
 
 def train_and_validate_lr(train_data, train_labels, test_data, test_labels, \
-                           penalty='l2', solver='sag', verbose=0, class_weight='balanced'):
-    lr = LR(penalty=penalty, solver=solver, verbose=verbose, class_weight=class_weight)
+                           penalty='l2', solver='sag', C=1.0, verbose=0, \
+                           class_weight='balanced', max_iter=1000):
+    print('training max_ent with penalty=%s, solver=%s, C=%s, and class_weight=%s' % (penalty, solver, C, class_weight))
+    lr = LR(penalty=penalty, solver=solver, C=C, verbose=verbose,
+            class_weight=class_weight, max_iter=max_iter)
     lr.fit(train_data, train_labels)
     predicted_labels = lr.predict(test_data)
     print('test', test_labels[:10], test_labels[-10:])
@@ -24,7 +27,8 @@ def train_and_validate_lr(train_data, train_labels, test_data, test_labels, \
     return mse, pearson, f_score
 
 def cross_validate_lr(data, labels, \
-                       penalty='l2', solver='sag', verbose=0, class_weight='balanced'):
+                       penalty='l2', solver='sag', C=1.0, verbose=0, \
+                       class_weight='balanced', max_iter=1000):
     print('cross-validating max-ent...')
     num_cross_validation_trials = 10
     kfold = KFold(num_cross_validation_trials, True, 1)
@@ -37,7 +41,7 @@ def cross_validate_lr(data, labels, \
 
         mse, (pearson_r, pearson_p), f_score = \
          train_and_validate_lr(data[train], labels[train], data[val], labels[val], \
-                                penalty, solver, verbose, class_weight)
+                                penalty, solver, C, verbose, class_weight, max_iter)
         mses.append(mse)
         pearsons.append(pearson_r)
         f_scores.append(f_score)

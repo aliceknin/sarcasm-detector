@@ -399,10 +399,10 @@ if __name__ == '__main__':
     assert(len(test_tweets) == len(test_labels))
 
     # abbreviate the tweets for testing ...
-    _train_tweets = train_tweets[:2000] + train_tweets[-2000:]
-    _train_labels = train_labels[:2000] + train_labels[-2000:]
-    _test_tweets = test_tweets[:2000] + test_tweets[-2000:]
-    _test_labels = test_labels[:2000] + test_labels[-2000:]
+    _train_tweets = train_tweets[:20000] + train_tweets[-20000:]
+    _train_labels = train_labels[:20000] + train_labels[-20000:]
+    _test_tweets = test_tweets[:5000] + test_tweets[-5000:]
+    _test_labels = test_labels[:5000] + test_labels[-5000:]
 
     np_train_features = \
         assemble_scalar_features(_train_tweets, sarc_freq_set, non_sarc_freq_set)
@@ -421,21 +421,23 @@ if __name__ == '__main__':
 
     print(scaled_train_features[:10])
 
+    C = 0.1
+
     print()
     print(' SVM '.center(80, "~"))
     print()
 
-    svm.cross_validate_svm(scaled_train_features, np_train_labels)
+    svm.cross_validate_svm(scaled_train_features, np_train_labels, C=C)
 
-    svm.train_and_validate_svm(scaled_train_features, np_train_labels, scaled_test_features, np_test_labels)
+    svm.train_and_validate_svm(scaled_train_features, np_train_labels, scaled_test_features, np_test_labels, C=C)
 
     print()
     print(' MaxEnt '.center(80, "~"))
     print()
 
-    max_ent.cross_validate_lr(scaled_train_features, np_train_labels)
+    max_ent.cross_validate_lr(scaled_train_features, np_train_labels, C=C)
 
-    max_ent.train_and_validate_lr(scaled_train_features, np_train_labels, scaled_test_features, np_test_labels)
+    max_ent.train_and_validate_lr(scaled_train_features, np_train_labels, scaled_test_features, np_test_labels, C=C)
 
     nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
     print("====" + nowStr + "====")
