@@ -1,6 +1,5 @@
 import numpy as np
 from sklearn.svm import SVR, SVC
-from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score
 from sklearn.metrics import mean_squared_error
 from scipy.stats import pearsonr
@@ -8,7 +7,7 @@ from scipy.stats import pearsonr
 def train_and_validate_svm(train_data, train_labels, test_data, test_labels, \
                            kernel='rbf', C=1.0, gamma='scale', verbose=False, class_weight='balanced'):
     print('training svm with kernel=%s, C=%s, gamma=%s, class_weight=%s' % (kernel, C, gamma, class_weight))
-    svm = SVC(kernel=kernel, C=C, gamma='scale', verbose=verbose, \
+    svm = SVC(kernel=kernel, C=C, gamma=gamma, verbose=verbose, \
               class_weight=class_weight, cache_size=1000)
     svm.fit(train_data, train_labels)
     predicted_labels = svm.predict(test_data)
@@ -22,20 +21,19 @@ def train_and_validate_svm(train_data, train_labels, test_data, test_labels, \
     print('f-score:', f_score)
     return mse, pearson, f_score
 
-def cross_validate_svm(data, labels, \
-                       kernel='linear', C=1.0, gamma='scale', verbose=False, class_weight='balanced'):
+def cross_validate_svm(cv_splits, kernel='linear', C=1.0, gamma='scale', \
+                       verbose=False, class_weight='balanced'):
     print('cross-validating svm...')
     num_cross_validation_trials = 10
-    kfold = KFold(num_cross_validation_trials, True, 1)
 
     mses = []
     pearsons = []
     f_scores = []
-    for trial_index, (train, val) in enumerate(kfold.split(data)):
+    for trial_index, (train_data, train_labels, val_data, val_labels) in enumerate(cv_splits):
         print((" Trial %d of %d" % (trial_index+1, num_cross_validation_trials)).center(80, '-'))
 
         mse, (pearson_r, pearson_p), f_score = \
-         train_and_validate_svm(data[train], labels[train], data[val], labels[val], \
+         train_and_validate_svm(train_data, train_labels, val_data, val_labels, \
                                 kernel, C, gamma, verbose, class_weight)
         mses.append(mse)
         pearsons.append(pearson_r)

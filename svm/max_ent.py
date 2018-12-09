@@ -3,7 +3,6 @@ import svm
 import numpy as np
 
 from sklearn.linear_model import LogisticRegression as LR
-from sklearn.model_selection import KFold
 from sklearn.metrics import f1_score
 from sklearn.metrics import mean_squared_error
 from scipy.stats import pearsonr
@@ -26,21 +25,20 @@ def train_and_validate_lr(train_data, train_labels, test_data, test_labels, \
     print('f-score:', f_score)
     return mse, pearson, f_score
 
-def cross_validate_lr(data, labels, \
+def cross_validate_lr(cv_splits, \
                        penalty='l2', solver='sag', C=1.0, verbose=0, \
                        class_weight='balanced', max_iter=1000):
     print('cross-validating max-ent...')
     num_cross_validation_trials = 10
-    kfold = KFold(num_cross_validation_trials, True, 1)
 
     mses = []
     pearsons = []
     f_scores = []
-    for trial_index, (train, val) in enumerate(kfold.split(data)):
+    for trial_index, (train_data, train_labels, val_data, val_labels) in enumerate(cv_splits):
         print((" Trial %d of %d" % (trial_index+1, num_cross_validation_trials)).center(80, '-'))
 
         mse, (pearson_r, pearson_p), f_score = \
-         train_and_validate_lr(data[train], labels[train], data[val], labels[val], \
+         train_and_validate_lr(train_data, train_labels, val_data, val_labels, \
                                 penalty, solver, C, verbose, class_weight, max_iter)
         mses.append(mse)
         pearsons.append(pearson_r)
