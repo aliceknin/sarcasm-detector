@@ -9,7 +9,7 @@ from nltk.corpus import sentiwordnet
 from nltk.corpus.reader.wordnet import WordNetError
 import svm
 import max_ent
-from sklearn import preprocessing
+from sklearn.preprocessing import StandardScaler
 
 from datetime import datetime
 
@@ -455,10 +455,18 @@ def train_test_features(train_tweets, train_labels, test_tweets, test_labels, se
     np_train_labels = np.array(train_labels)
     np_test_labels = np.array(test_labels)
 
-    scaled_train_features = preprocessing.scale(np_train_features)
-    scaled_test_features = preprocessing.scale(np_test_features)
+    scaled_train_features, scaled_test_features = \
+        scale_data(np_train_features, np_test_features)
 
     return scaled_train_features, np_train_labels, scaled_test_features, np_test_labels
+
+def scale_data(np_train_features, np_test_features):
+    from sklearn.preprocessing import StandardScaler
+    scaler = StandardScaler()
+    scaler.fit(np_train_features)  # Don't cheat - fit only on training data
+    scaled_train_features = scaler.transform(np_train_features)
+    scaled_test_features = scaler.transform(np_test_features)  # apply same transformation to test data
+    return scaled_train_features, scaled_test_features
 
 # ------------------------------------------------------------------------
 # Tests ---
