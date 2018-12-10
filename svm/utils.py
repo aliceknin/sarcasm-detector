@@ -7,7 +7,7 @@ from nltk.corpus import sentiwordnet
 from nltk.corpus.reader.wordnet import WordNetError
 import svm
 import max_ent
-from sklearn import preprocessing
+from sklearn.preprocessing import StandardScaler
 
 from datetime import datetime
 
@@ -216,6 +216,7 @@ def common_ngrams_count(ngrams_in_tweets, freq_set):
         for token in tokens:
             if token in freq_set:
                 freq_count += 1
+        freq_count *= 1.0
         freq_counts.append(freq_count)
     return freq_counts
 
@@ -243,6 +244,7 @@ def _get_repeated_character_count_tweet(tweet):
             break
     if repeated_characters:
         repeated_character_count += 1
+    repeated_character_count *= 1.0
     return repeated_character_count
 
 def get_repeated_character_count_tweets(tweets):
@@ -258,6 +260,7 @@ def get_percent_caps(tweet):
             num_caps += 1
     percent_caps = num_caps / len(tweet)
     adjusted_percent_caps = math.ceil(percent_caps * 100)
+    adjusted_percent_caps *= 1.0
     return adjusted_percent_caps
 
 def get_percent_caps_tweets(tweets):
@@ -343,6 +346,8 @@ def get_senti_score(tweet, senti_scores_dict, DEBUG=False, VERBOSE=False):
         adjusted_score = math.ceil(avg_senti_score * 100)
     else:
         adjusted_score = math.floor(avg_senti_score * 100)
+
+    adjusted_score *= 1.0
 
     return adjusted_score, num_senti_words, num_exceptions
 
@@ -433,6 +438,12 @@ def get_test_features_tweets(tweets, word_dict, bigram_dict):
     features = assemble_features(tweets, words_in_tweets, bigrams_in_tweets, word_dict, bigram_dict)
     return features
 
+def scale_data(np_train_features, np_test_features):
+    scaler = StandardScaler()
+    scaler.fit(np_train_features)  # Don't cheat - fit only on training data
+    scaled_train_features = scaler.transform(np_train_features)
+    scaled_test_features = scaler.transform(np_test_features)  # apply same transformation to test data
+    return scaled_train_features, scaled_test_features
 
 # ------------------------------------------------------------------------
 # Tests ---
@@ -470,14 +481,16 @@ if __name__ == '__main__':
     nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
     print("====" + nowStr + "====")
 
-    scaled_train_features = preprocessing.scale(np_train_features)
-    scaled_test_features = preprocessing.scale(np_test_features)
+    scaled_train_features, scaled_test_features = \
+        scale_data(np_train_features, np_test_features)
 
     print(scaled_train_features[:10])
 
     C = 0.01
 
     print()
+    nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
+    print("====" + nowStr + "====")
     print(' SVM '.center(80, "~"))
     print()
 
@@ -486,6 +499,8 @@ if __name__ == '__main__':
     svm.train_and_validate_svm(scaled_train_features, np_train_labels, scaled_test_features, np_test_labels, C=C)
 
     print()
+    nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
+    print("====" + nowStr + "====")
     print(' MaxEnt '.center(80, "~"))
     print()
 
