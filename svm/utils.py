@@ -502,7 +502,7 @@ if __name__ == '__main__':
 
     C = 0.1
 
-    max_ent.cross_validate_lr(scaled_train_features, np_train_labels, C=C)
+    # max_ent.cross_validate_lr(scaled_train_features, np_train_labels, C=C)
 
     max_ent.train_and_validate_lr(scaled_train_features, np_train_labels, scaled_test_features, np_test_labels, C=C)
 
@@ -514,7 +514,7 @@ if __name__ == '__main__':
 
     C = 0.01
 
-    svm.cross_validate_svm(scaled_train_features, np_train_labels, C=C)
+    # svm.cross_validate_svm(scaled_train_features, np_train_labels, C=C)
 
     svm.train_and_validate_svm(scaled_train_features, np_train_labels, scaled_test_features, np_test_labels, C=C)
 
