@@ -9,6 +9,8 @@ from nltk.corpus.reader.wordnet import WordNetError
 import svm
 import max_ent
 from sklearn.preprocessing import StandardScaler
+import os.path
+import pickle
 
 from datetime import datetime
 
@@ -388,8 +390,6 @@ def get_sentiments_tweets(tweets, senti_scores_dict):
 
 ############################## Assemble Features ##############################
 
-senti_scores_dict = {}  # word_tag : senti_score = pos - neg
-
 def assemble_features(tweets, words_in_tweets, bigrams_in_tweets, word_dict, bigram_dict, senti_scores_dict):
     index_vectors_unigrams = ngrams_to_indices(words_in_tweets, word_dict)
     index_vectors_bigrams = ngrams_to_indices(bigrams_in_tweets, bigram_dict)
@@ -453,20 +453,30 @@ if __name__ == '__main__':
     nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
     print("====" + nowStr + "====")
 
+    senti_scores_dict_name = "senti_scores_dict"
+
+    if os.path.isfile(senti_scores_dict_name):
+        with open(senti_scores_dict_name, 'rb') as f:
+            senti_scores_dict = pickle.load(f)
+        print('loading pickled dict')
+    else:
+        senti_scores_dict = {}
+        print('creating new dict')
+
     sarcastic_tweets, non_sarcastic_tweets = load_data() #
     train_tweets, train_labels, test_tweets, test_labels, sarc_freq_set, non_sarc_freq_set = \
         get_data(sarcastic_tweets, non_sarcastic_tweets)
 
-    assert(len(train_tweets) + len(test_tweets) == \
-           len(sarcastic_tweets) + len(non_sarcastic_tweets))
-    assert(len(train_tweets) == len(train_labels))
-    assert(len(test_tweets) == len(test_labels))
-
+    USE_FULL_SET = True
     TRAIN_SIZE = 20000
 
-    # abbreviate the tweets for testing ...
-    _train_tweets = train_tweets[:TRAIN_SIZE] + train_tweets[-TRAIN_SIZE:]
-    _train_labels = train_labels[:TRAIN_SIZE] + train_labels[-TRAIN_SIZE:]
+    if USE_FULL_SET:
+        _train_tweets = train_tweets
+        _train_labels = train_labels
+    else:
+        # abbreviate the tweets for testing ...
+        _train_tweets = train_tweets[:TRAIN_SIZE] + train_tweets[-TRAIN_SIZE:]
+        _train_labels = train_labels[:TRAIN_SIZE] + train_labels[-TRAIN_SIZE:]
 
     np_train_features = \
         assemble_scalar_features(_train_tweets, sarc_freq_set, non_sarc_freq_set, senti_scores_dict)
@@ -475,27 +485,14 @@ if __name__ == '__main__':
     np_train_labels = np.array(_train_labels)
     np_test_labels = np.array(test_labels)
 
-    print(np_train_features[:10])
-
     nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
     print("====" + nowStr + "====")
 
     scaled_train_features, scaled_test_features = \
         scale_data(np_train_features, np_test_features)
 
-    print(scaled_train_features[:10])
-
-    C = 0.01
-
-    print()
-    nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
-    print("====" + nowStr + "====")
-    print(' SVM '.center(80, "~"))
-    print()
-
-    # svm.cross_validate_svm(scaled_train_features, np_train_labels, C=C)
-
-    svm.train_and_validate_svm(scaled_train_features, np_train_labels, scaled_test_features, np_test_labels, C=C)
+    with open(senti_scores_dict_name, 'wb') as f:
+        pickle.dump(senti_scores_dict, f)
 
     print()
     nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
@@ -503,9 +500,23 @@ if __name__ == '__main__':
     print(' MaxEnt '.center(80, "~"))
     print()
 
+    C = 0.1
+
     # max_ent.cross_validate_lr(scaled_train_features, np_train_labels, C=C)
 
     max_ent.train_and_validate_lr(scaled_train_features, np_train_labels, scaled_test_features, np_test_labels, C=C)
+
+    print()
+    nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
+    print("====" + nowStr + "====")
+    print(' SVM '.center(80, "~"))
+    print()
+
+    C = 0.01
+
+    # svm.cross_validate_svm(scaled_train_features, np_train_labels, C=C)
+
+    svm.train_and_validate_svm(scaled_train_features, np_train_labels, scaled_test_features, np_test_labels, C=C)
 
     nowStr = datetime.now().strftime("%B %d, %Y %I:%M:%S %p")
     print("====" + nowStr + "====")
