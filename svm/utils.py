@@ -1,3 +1,4 @@
+import sys
 import re
 import nltk
 import math
@@ -382,8 +383,6 @@ def get_sentiments_tweets(tweets, senti_scores_dict):
     print((nltk.FreqDist(sentiments)).most_common(20))
     print("Tweets with scored words: %d; total words scored: %d" % \
         (tweets_with_scored_words, total_words_scored))
-    print("Tweets with exceptions: %d; total exceptions: %d" % \
-        (tweets_with_exceptions, total_exceptions))
     print("Total word/tags with scores: %d" % len(senti_scores_dict))
     return scores
 
